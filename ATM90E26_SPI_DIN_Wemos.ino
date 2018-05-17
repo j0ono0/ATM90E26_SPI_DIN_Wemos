@@ -15,7 +15,7 @@
 #define DEBUG 1
 
 #include <ESP8266WiFi.h>
-#include <FS.h> 
+#include <FS.h>           // SPIFFS library
 #include <ArduinoJson.h>  //Config storage
 #include <ESP8266WebServer.h>
 #include <SPI.h>
@@ -29,18 +29,21 @@
 #include <Wire.h>
 #endif
 
+#include "config.h"
+
 extern "C" {
   #include "user_interface.h" //Enables system_get_chip_id used in SoftAP mode
 }
 
 
-std::unique_ptr<ESP8266WebServer> server; //Define webserver
+ESP8266WebServer server(80);
 
 //-----Config variables-----
+/* //Added via config.h for development
   //Wifi
   char wifi_ssid[64]     = "";
   char wifi_password[64] = "";
-  
+*/
   //Thingspeak
   char ts_server[50] = "api.thingspeak.com";
   char ts_auth[36] = "THINGSPEAK_KEY";// Sign up on thingspeak and get WRITE API KEY.
@@ -120,8 +123,6 @@ static unsigned char whatnick_logo_bits[] = {
 void setup() {
   Serial.begin(115200);
   delay(10);
-  DEBUG_PRINTLN();
-  DEBUG_PRINTLN();
   DEBUG_PRINTLN("Booting...");
   
   //Show logo while wifi is set-up
@@ -133,10 +134,10 @@ void setup() {
   } while ( u8g2.nextPage() );
   u8g2.setFont(u8g2_font_5x8_tr);
 
-  readTSConfig();
+  // TODO: what does readTSConfig do? whre does it read from? need to reimplement
+  //readTSConfig();
 
   wifi_attemptToConnect();
-  
   setupWebserver();
   
   DEBUG_PRINTLN("Starting metering");
@@ -147,7 +148,7 @@ void setup() {
 
 void loop() {
 
-  server->handleClient();       //Handle HTTP calls
+  server.handleClient();       //Handle HTTP calls
 
   
  /*Repeatedly fetch some values from the ATM90E26 */
@@ -338,13 +339,6 @@ void saveTSConfig()
 }
 
 
-
-
-
-
-
-
-
 void wifi_attemptToConnect(){
 
   if(wifi_ssid[0]==0){
@@ -401,7 +395,7 @@ void wifi_startSoftAP(){
 
 
 void http_handleReset(){
-  server->send(200, "text/plain","Resetting...");
+  server.send(200, "text/plain","Resetting...");
   DEBUG_PRINTLN("Resetting");
   ESP.reset();
 }
@@ -487,82 +481,82 @@ void http_handleRoot() {
   webPage += "eforeend\",\"<br><input value=Save type=submit>\");form.insertAdjacentHTML(";
   webPage += "\"beforeend\",\"<br><a href='/update'>Click here to upload new firmware</a>";
   webPage += "\");</script></html>";
-  server->send(200, "text/html", webPage);
+  server.send(200, "text/html", webPage);
     
 }
 
   
 void http_handleSet(){
-  if(strlen(server->arg("ts_auth").c_str())){
-      strlcpy(ts_auth, server->arg("ts_auth").c_str(), sizeof(ts_auth));  
+  if(strlen(server.arg("ts_auth").c_str())){
+      strlcpy(ts_auth, server.arg("ts_auth").c_str(), sizeof(ts_auth));  
       DEBUG_PRINT("Setting ts_auth to:");
       DEBUG_PRINTLN(ts_auth);
     }
 
-    if(strlen(server->arg("ts_server").c_str())){
-      strlcpy(ts_server, server->arg("ts_server").c_str(), sizeof(ts_server));  
+    if(strlen(server.arg("ts_server").c_str())){
+      strlcpy(ts_server, server.arg("ts_server").c_str(), sizeof(ts_server));  
       DEBUG_PRINT("Setting ts_server to:");
       DEBUG_PRINTLN(ts_server);
     }
     
-    if(strlen(server->arg("wifi_ssid").c_str())){
-      strlcpy(wifi_ssid, server->arg("wifi_ssid").c_str(), sizeof(wifi_ssid));  
+    if(strlen(server.arg("wifi_ssid").c_str())){
+      strlcpy(wifi_ssid, server.arg("wifi_ssid").c_str(), sizeof(wifi_ssid));  
       DEBUG_PRINT("Setting wifi_ssid to:");
       DEBUG_PRINTLN(wifi_ssid);
     } 
 
-    if(strlen(server->arg("wifi_password").c_str())){
-      strlcpy(wifi_password, server->arg("wifi_password").c_str(), sizeof(wifi_password));  
+    if(strlen(server.arg("wifi_password").c_str())){
+      strlcpy(wifi_password, server.arg("wifi_password").c_str(), sizeof(wifi_password));  
       DEBUG_PRINT("Setting wifi_password to:");
       DEBUG_PRINTLN(wifi_password);
     } 
 
 
-    if(strlen(server->arg("eic2_ugain").c_str())){
-       eic2_ugain = atoi(server->arg("eic2_ugain").c_str());
+    if(strlen(server.arg("eic2_ugain").c_str())){
+       eic2_ugain = atoi(server.arg("eic2_ugain").c_str());
        DEBUG_PRINT("Setting eic2_ugain to:");
        DEBUG_PRINTLN(eic2_ugain);
     }
-    if(strlen(server->arg("eic2_igain").c_str())){
-       eic2_igain = atoi(server->arg("eic2_igain").c_str());
+    if(strlen(server.arg("eic2_igain").c_str())){
+       eic2_igain = atoi(server.arg("eic2_igain").c_str());
        DEBUG_PRINT("Setting eic2_igain to:");
        DEBUG_PRINTLN(eic2_igain);
     }
-    if(strlen(server->arg("eic2_CRC1").c_str())){
-       eic2_CRC1 = atoi(server->arg("eic2_CRC1").c_str());
+    if(strlen(server.arg("eic2_CRC1").c_str())){
+       eic2_CRC1 = atoi(server.arg("eic2_CRC1").c_str());
        DEBUG_PRINT("Setting eic2_CRC1 to:");
        DEBUG_PRINTLN(eic2_CRC1);
     }
-    if(strlen(server->arg("eic2_CRC2").c_str())){
-       eic2_CRC2 = atoi(server->arg("eic2_CRC2").c_str());
+    if(strlen(server.arg("eic2_CRC2").c_str())){
+       eic2_CRC2 = atoi(server.arg("eic2_CRC2").c_str());
        DEBUG_PRINT("Setting eic2_CRC2 to:");
        DEBUG_PRINTLN(eic2_CRC2);
     }            
 
   
-    if(strlen(server->arg("eic1_ugain").c_str())){
-       eic1_ugain = atoi(server->arg("eic1_ugain").c_str());
+    if(strlen(server.arg("eic1_ugain").c_str())){
+       eic1_ugain = atoi(server.arg("eic1_ugain").c_str());
        DEBUG_PRINT("Setting eic1_ugain to:");
        DEBUG_PRINTLN(eic1_ugain);
     }
-    if(strlen(server->arg("eic1_igain").c_str())){
-       eic1_igain = atoi(server->arg("eic1_igain").c_str());
+    if(strlen(server.arg("eic1_igain").c_str())){
+       eic1_igain = atoi(server.arg("eic1_igain").c_str());
        DEBUG_PRINT("Setting eic1_igain to:");
        DEBUG_PRINTLN(eic1_igain);
     }
-    if(strlen(server->arg("eic1_CRC1").c_str())){
-       eic1_CRC1 = atoi(server->arg("eic1_CRC1").c_str());
+    if(strlen(server.arg("eic1_CRC1").c_str())){
+       eic1_CRC1 = atoi(server.arg("eic1_CRC1").c_str());
        DEBUG_PRINT("Setting eic1_CRC1 to:");
        DEBUG_PRINTLN(eic1_CRC1);
     }
-    if(strlen(server->arg("eic1_CRC2").c_str())){
-       eic1_CRC2 = atoi(server->arg("eic1_CRC2").c_str());
+    if(strlen(server.arg("eic1_CRC2").c_str())){
+       eic1_CRC2 = atoi(server.arg("eic1_CRC2").c_str());
        DEBUG_PRINT("Setting eic1_CRC2 to:");
        DEBUG_PRINTLN(eic1_CRC2);
     } 
 
 
-    server->send(200, "text/plain","Saved settings..Rebooting");
+    server.send(200, "text/plain","Saved settings..Rebooting");
     delay(100);
     saveTSConfig();
    
@@ -572,60 +566,115 @@ void http_handleSet(){
 void http_handleNotFound() {
   String message = "File Not Found\n\n";
   message += "URI: ";
-  message += server->uri();
+  message += server.uri();
   message += "\nMethod: ";
-  message += (server->method() == HTTP_GET) ? "GET" : "POST";
+  message += (server.method() == HTTP_GET) ? "GET" : "POST";
   message += "\nArguments: ";
-  message += server->args();
+  message += server.args();
   message += "\n";
-  for (uint8_t i = 0; i < server->args(); i++) {
-    message += " " + server->argName(i) + ": " + server->arg(i) + "\n";
+  for (uint8_t i = 0; i < server.args(); i++) {
+    message += " " + server.argName(i) + ": " + server.arg(i) + "\n";
   }
-  server->send(404, "text/plain", message);
+  server.send(404, "text/plain", message);
 }
 
 
 
 
-
-//HTTP Section
+///////////////////////////////////////////////
+// HTTP Section
 void setupWebserver(){
   DEBUG_PRINTLN("Starting webserver...");
+
+  //Start the SPI Flash Files System
+  SPIFFS.begin();
   
   //Setup the runtime webserver
-  server.reset(new ESP8266WebServer(WiFi.localIP(), 80));
+  server.on("/", http_handleRoot);
+  server.on("/set", http_handleSet);
+  server.on("/reset", http_handleReset);
+  server.on("/update", http_handleUpdate);
+  server.on("/energymon/json/wifi", json_availableWiFi);
+  
+  server.onNotFound([]() {                     // If the client requests any URI
+    if (!handleFileRead(server.uri()))          // send it if it exists
+      http_handleNotFound(); 
+    });
 
-  server->on("/", http_handleRoot);
-  
-  server->on("/set", http_handleSet);
-  
-  server->on("/reset", http_handleReset);
-
-  server->on("/update", http_handleUpdate);
-  
-  
-  server->onNotFound(http_handleNotFound);
-  
   http_setupUpdate();
-  
-  server->begin();
+  server.begin();
   DEBUG_PRINTLN("HTTP server started");
- 
 }
+
+String getContentType(String filename){
+  if(filename.endsWith(".htm")) return "text/html";
+  else if(filename.endsWith(".html")) return "text/html";
+  else if(filename.endsWith(".css")) return "text/css";
+  else if(filename.endsWith(".js")) return "application/javascript";
+  else if(filename.endsWith(".png")) return "image/png";
+  else if(filename.endsWith(".gif")) return "image/gif";
+  else if(filename.endsWith(".jpg")) return "image/jpeg";
+  else if(filename.endsWith(".ico")) return "image/x-icon";
+  else if(filename.endsWith(".xml")) return "text/xml";
+  else if(filename.endsWith(".pdf")) return "application/x-pdf";
+  else if(filename.endsWith(".zip")) return "application/x-zip";
+  else if(filename.endsWith(".gz")) return "application/x-gzip";
+  return "text/plain";
+}
+
+bool handleFileRead(String path){                        // send the right file to the client (if it exists)
+  Serial.println("handleFileRead: " + path);
+  if(path.endsWith("/")) path += "index.html";           // If a folder is requested, send the index file
+  String contentType = getContentType(path);             // Get the MIME type
+  String pathWithGz = path + ".gz";
+  if(SPIFFS.exists(pathWithGz) || SPIFFS.exists(path)){  // If the file exists, either as a compressed archive, or normal
+    if(SPIFFS.exists(pathWithGz))                        // If there's a compressed version available
+      path += ".gz";                                     // Use the compressed version
+    File file = SPIFFS.open(path, "r");                  // Open the file
+    size_t sent = server.streamFile(file, contentType);  // Send it to the client
+    file.close();                                        // Close the file again
+    Serial.println(String("\tSent file: ") + path);
+    return true;
+  }
+  Serial.println(String("\tFile Not Found: ") + path);
+  return false;                                          // If the file doesn't exist, return false
+}
+
+void json_availableWiFi(){
+  
+    int n = WiFi.scanNetworks();
+    if (n == 0)
+    DEBUG_PRINTLN("No networks found.");
+    
+    String json = "{\"data\": [";
+    for(int i = 0; i < n; ++i){
+        json = String(json + "{");
+        json = String(json + "\"name\": \"" + WiFi.SSID(i));
+        json = String(json + "\", \"strength\":" + WiFi.RSSI(i));
+        json = String(json + "}");
+        if(i < n-1){ json = String(json + ","); }
+    }
+    json = String(json + "]}");
+    server.send(200, "text/json", json);
+    json = String();
+    
+}
+
+// END j0ono0 tinkering //////////////////////////////////
 
 
 void http_handleUpdate(){
   const char* serverIndex = "<form method='POST' action='/doupdate' enctype='multipart/form-data'><input type='file' name='update'><input type='submit' value='Update'></form>";
-   server->send(200, "text/html",serverIndex);
+   server.send(200, "text/html",serverIndex);
 }
 void http_setupUpdate(){
-  server->on("/doupdate", HTTP_POST, [](){
-      server->sendHeader("Connection", "close");
-      server->sendHeader("Access-Control-Allow-Origin", "*");
-      server->send(200, "text/plain", (Update.hasError())?"FAIL":"OK");
+  server.on("/doupdate", HTTP_POST, [](){
+      server.sendHeader("Connection", "close");
+      server.sendHeader("Access-Control-Allow-Origin", "*");
+      server.send(200, "text/plain", (Update.hasError())?"FAIL":"OK");
       ESP.restart();
     },[](){
-      HTTPUpload& upload = server->upload();
+      HTTPUpload& upload = server.upload();
       if(upload.status == UPLOAD_FILE_START){
         Serial.setDebugOutput(true);
 //        WiFiUDP::stopAll();
@@ -649,12 +698,6 @@ void http_setupUpdate(){
       yield();
     });
 }
-
-
-
-
-
-
 
 
 void setupMetering(){
@@ -683,8 +726,6 @@ void setupMetering(){
   eic2.InitEnergyIC();
   delay(1000);
 }
-
-
 
 
 void readMeterDisplay()
@@ -737,3 +778,4 @@ void readMeterDisplay()
   } while ( u8g2.nextPage() );
   prevMillis = curMillis;
 }
+
