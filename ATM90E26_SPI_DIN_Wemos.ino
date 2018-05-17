@@ -121,6 +121,9 @@ static unsigned char whatnick_logo_bits[] = {
 };
 
 void setup() {
+
+
+  
   Serial.begin(115200);
   delay(10);
   DEBUG_PRINTLN("Booting...");

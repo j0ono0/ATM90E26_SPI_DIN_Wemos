@@ -9,15 +9,13 @@
         <title>Whatnick: Energy Monitor</title>
     </head>
 	<body>
-        <div class="banner pagesection">
-            <h1 class="banner__title">Whatnick. Energymon Config</h1>
-            <nav class="tabs">
-                <a class="tabs__tab active" href="#wifi">Wi-Fi</a>
-                <a class="tabs__tab" href="#calibration">Calibration</a>
-                <a class="tabs__tab" href="#firmware">Firmware</a>
-            </nav>
-        </div>
         <div id="application">
+            <div class="banner pagesection">
+                <h1 class="banner__title">Whatnick. Energymon Config</h1>
+                <tabs
+                    :tabs = [{name:"Wi-Fi",uid:"#wifi"},{name:"Calibration",uid:"#calibration"},{name:"Firmware",uid:"#firmware"}]        
+                ></tabs>
+            </div>
             <div class="pagesection">
                 <wifi-list></wifi-list>
             </div>
