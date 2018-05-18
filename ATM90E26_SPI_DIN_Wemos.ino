@@ -122,8 +122,6 @@ static unsigned char whatnick_logo_bits[] = {
 
 void setup() {
 
-
-  
   Serial.begin(115200);
   delay(10);
   DEBUG_PRINTLN("Booting...");
@@ -137,15 +135,16 @@ void setup() {
   } while ( u8g2.nextPage() );
   u8g2.setFont(u8g2_font_5x8_tr);
 
-  // TODO: what does readTSConfig do? whre does it read from? need to reimplement
+  // JJN TO-DO: Investigate readTSConfig purpose
   //readTSConfig();
 
-  wifi_attemptToConnect();
-  setupWebserver();
-  
+  // JJN Disabled connecting to network, trying out softAP for fun
+  // wifi_attemptToConnect();
+  // setupWebserver();
+  wifi_startSoftAP();
+
   DEBUG_PRINTLN("Starting metering");
   setupMetering();
-
 
 }
 
@@ -153,7 +152,6 @@ void loop() {
 
   server.handleClient();       //Handle HTTP calls
 
-  
  /*Repeatedly fetch some values from the ATM90E26 */
   curMillis = millis();
 //
@@ -241,8 +239,6 @@ void sendThingSpeak() {
 }
 
 
-
-
 void readTSConfig()
 {
   //clean FS, for testing
@@ -297,8 +293,6 @@ void readTSConfig()
   }
   //end read
 }
-
-
 
 
 void saveTSConfig()
@@ -366,7 +360,7 @@ void wifi_attemptToConnect(){
         tryAgain=false; //WiFi is connected, set the tryAgain flag to false so we exit to main loop
     }
 
-    //Give up after 10 attempts and boot the softAP
+    //Give up after 20 attempts and boot the softAP
     if(loopcount>20){
       DEBUG_PRINTLN("Unable to connect to configured network, starting AP");
       wifi_startSoftAP();
@@ -388,8 +382,8 @@ void wifi_startSoftAP(){
   String ap_name_str = "EMON_"+String(system_get_chip_id(),HEX);
   DEBUG_PRINT("Configuring access point on SSID:");
   DEBUG_PRINTLN(ap_name_str);
-  WiFi.softAP(ap_name_str.c_str());  //No password
-  
+  WiFi.softAP(ap_name_str.c_str(),"whatnick");
+
   IPAddress myIP = WiFi.softAPIP();
   DEBUG_PRINT("AP IP address: ");
   DEBUG_PRINTLN(myIP);
